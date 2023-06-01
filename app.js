@@ -9,7 +9,7 @@ const isValid = require("date-fns/isValid");
 const app = express();
 app.use(express.json());
 
-let database = null;
+let database;
 const initializeDbAndServer = async () => {
   try {
     database = await open({
@@ -125,14 +125,14 @@ app.get("/todos/", async (request, response) => {
           );
         } else {
           response.status(400);
-          response.send("Invalid Todo Category");
+          response.send("Invalid Todo Status");
         }
       } else {
         response.status(400);
-        response.send("Invalid Todo status");
+        response.send("Invalid Todo Category");
       }
       break;
-    case hasCategoryProperty(request.query):
+    case hasCategoryAndPriority(request.query):
       if (
         category === "WORK" ||
         category === "HOME" ||
@@ -238,6 +238,7 @@ app.get("/todos/:todoId/", async (request, response) => {
 
 app.get("/agenda/", async (request, response) => {
   const { date } = request.query;
+  console.log(isMatch(date, "yyy-MM-dd"));
   if (isMatch(date, "yyy-MM-dd")) {
     const newDate = format(new Date(date), "yyy-MM-dd");
     const requestQuery = `SELECT * FROM todo WHERE due_date = '${newDate}';`;
@@ -262,13 +263,13 @@ app.post("/todos/", async (request, response) => {
         category === "WORK" ||
         category === "LEARNING"
       ) {
-        if ((isMatch(dueDate), "yyy-MM-dd")) {
+        if (isMatch(dueDate, "yyy-MM-dd")) {
           const newDueDate = format(new Date(dueDate), "yyy-MM-dd");
           const postTodoQuery = `
                         INSERT INTO 
-                            todo(id,todo,priority,status,category,due_date)
+                            todo(id,todo,category,priority,status,due_date)
                         VALUES
-                            (${id},'${todo}','${priority}','${status}','${category}',${newDueDate}');
+                            (${id},'${todo}','${category}','${priority}','${status}','${newDueDate}');
                     `;
           await database.run(postTodoQuery);
           response.send("Todo Successfully Added");
@@ -282,7 +283,7 @@ app.post("/todos/", async (request, response) => {
       }
     } else {
       response.status(400);
-      response.send("Invalid Todo status");
+      response.send("Invalid Todo Status");
     }
   } else {
     response.status(400);
